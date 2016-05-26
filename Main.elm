@@ -39,34 +39,28 @@ weather = """  Dy MxT   MnT   AvT   HDDay  AvDP 1HrP TPcpn WxType PDir AvSp Dir 
   mo  82.9  60.5  71.7    16  58.8       0.00              6.9          5.3
 """
 
---readGrid : String -> Maybe (Matrix String)
---readGrid s = Matrix.fromList (parse s)
-
---pairs: Matrix -> List (String, String)
---pairs g = map [\r -> List.] g
-
-lines : String -> Array String
+lines : String -> List String
 lines s = String.lines s
   |> List.filter (\l -> not (String.isEmpty l))
   |> dropLast 1
-  |> Array.fromList
 
 dropLast : Int -> List a -> List a
 dropLast n l = List.take ((List.length l) - n) l
 
-dropItem : Int -> Array a -> Array a
-dropItem index arr =
+dropItem : Int -> List a -> List a
+dropItem index l =
   let
+    arr = Array.fromList l
     left = Array.slice 0 index arr
     right = Array.slice (index+1) (Array.length arr) arr
   in
     (Array.toList left) ++ (Array.toList right)
-      |> Array.fromList
 
-header : Array String -> Maybe String
-header a = Array.get 0 a
+header : List String -> Maybe String
+header l =
+  List.head l
 
-type alias Heading = { name: String, start: Int, end: Int }
+type alias Heading = { name : String, start : Int, end : Int }
 
 headings : String -> List Heading
 headings row =
@@ -77,20 +71,46 @@ headings row =
     List.map creator (matcher row)
 
 cells : String -> List Heading -> List String
-cells s headings = List.map (\h -> String.slice (.start h) (.end h) s) headings
+cells s headings =
+  List.map (\h -> String.slice (.start h) (.end h) s) headings
 
-parse : String -> Array (List String)
+parse : String -> List (List String)
 parse s =
   let
     ls = lines s
     hs = headings (Maybe.withDefault "" (header ls))
   in
-    Array.map (\l -> cells l hs) (dropItem 0 ls)
+    List.map (\l -> cells l hs) (dropItem 0 ls)
+
+readGrid : String -> Maybe (Matrix String)
+readGrid s =
+  Matrix.fromList (parse s)
+
+rows : Matrix a -> List (Array a)
+rows m =
+  List.map (\i -> (Maybe.withDefault (Array.fromList []) (Matrix.getRow i m))) [0 .. (Matrix.height m)]
+
+type alias Spread = {row : String, max : String, min : String}
+
+spreads: Matrix String -> List Spread
+spreads m =
+  let
+    cellValue = \i r -> case (Array.get i r) of
+      Nothing -> ""
+      Just v -> v
+  in
+    List.map (\r -> {row = cellValue 0 r, max = cellValue 1 r, min = cellValue 2 r}) (rows m)
 
 --main =
 --  text (toString (parse weather))
 main =
-  text (toString (parse weather))
+  let
+    mm = readGrid weather
+  in
+    case mm of
+      Nothing -> text "No matrix"
+      Just m -> text (toString (spreads m))
+
   -- text (toString (lines weather))
   -- text (toString (dropItem 0 (Array.fromList [1,2,3,4,5])))
 
