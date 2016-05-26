@@ -38,14 +38,6 @@ weather = """  Dy MxT   MnT   AvT   HDDay  AvDP 1HrP TPcpn WxType PDir AvSp Dir 
   30  90    45    68          63.6       0.00 H       240  6.0 220  17  4.8 200 41 1022.7
   mo  82.9  60.5  71.7    16  58.8       0.00              6.9          5.3
 """
--- parse : String -> List (List String)
--- parse s =
---   let
---     lines = String.lines s
---     emptyRowFilter = List.filter (\s -> not (String.isEmpty s))
---     colSplitter = (R.split R.All (R.regex " {1,7}"))
---   in
---     List.map colSplitter (emptyRowFilter lines)
 
 --readGrid : String -> Maybe (Matrix String)
 --readGrid s = Matrix.fromList (parse s)
@@ -75,12 +67,6 @@ header : Array String -> Maybe String
 header a = Array.get 0 a
 
 type alias Heading = { name: String, start: Int, end: Int }
-
---words : String -> List Heading
---words s = [{name = "A", start = 0, end = 0}]
-
---headings : String -> List String
---headings s = List.map .match (R.find R.All (R.regex " *[0-9A-Za-z]+") s)
 
 headings : String -> List Heading
 headings row =
