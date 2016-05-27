@@ -88,30 +88,37 @@ readGrid s =
 
 rows : Matrix a -> List (Array a)
 rows m =
-  List.map (\i -> (Maybe.withDefault (Array.fromList []) (Matrix.getRow i m))) [0 .. (Matrix.height m)]
+  List.map (\i -> (Maybe.withDefault (Array.fromList []) (Matrix.getRow i m))) [0 .. ((Matrix.height m) - 1)]
 
-type alias Spread = {row : String, max : String, min : String}
+type alias Range = {row : Int, max : Float, min : Float}
 
-spreads: Matrix String -> List Spread
-spreads m =
+ranges: Matrix String -> List Range
+ranges m =
   let
     cellValue = \i r -> case (Array.get i r) of
       Nothing -> ""
       Just v -> v
   in
-    List.map (\r -> {row = cellValue 0 r, max = cellValue 1 r, min = cellValue 2 r}) (rows m)
+    List.map (\r -> {row = intValue(cellValue 0 r), max = floatValue(cellValue 1 r), min = floatValue(cellValue 2 r)}) (rows m)
 
---main =
---  text (toString (parse weather))
+intValue : String -> Int
+intValue s = Result.withDefault 0 (String.toInt (String.trim s))
+
+floatValue : String -> Float
+floatValue s = Result.withDefault 0 (String.toFloat (String.trim s))
+
+type alias Spread = {row : Int, spread : Float}
+
+min : List Spread -> Spread
+min spreads =
+  List.foldl (\a b -> if (.spread a) <= (.spread b) then a else b) {row = 0, spread = 1000} spreads
+
 main =
   let
     mm = readGrid weather
   in
     case mm of
       Nothing -> text "No matrix"
-      Just m -> text (toString (spreads m))
-
-  -- text (toString (lines weather))
-  -- text (toString (dropItem 0 (Array.fromList [1,2,3,4,5])))
+      Just m -> text (toString (min (List.map (\r -> {row = .row r, spread=((.max r) - (.min r))}) (ranges m))))
 
 -- Tests
